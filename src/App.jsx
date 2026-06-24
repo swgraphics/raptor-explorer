@@ -74,7 +74,7 @@ function Player() {
   const isGrounded = useRef(true);
   const targetRotation = useRef(0);
 
-  useFrame(({ camera }) => {
+  useFrame(({ camera }, delta) => {
     if (!cube.current) return;
 
     let speed = keys["shift"] ? 0.2 : 0.1;
@@ -93,25 +93,34 @@ function Player() {
     const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
 
     if (length > 0) {
-      moveX /= length;
-      moveZ /= length;
+  moveX /= length;
+  moveZ /= length;
 
-      const nextX = clampToMap(cube.current.position.x + moveX * speed);
-      const nextZ = clampToMap(cube.current.position.z + moveZ * speed);
+  const nextX = clampToMap(cube.current.position.x + moveX * speed);
+  const nextZ = clampToMap(cube.current.position.z + moveZ * speed);
 
-      if (!isCollidingWithObstacle(nextX, nextZ)) {
-        cube.current.position.x = nextX;
-        cube.current.position.z = nextZ;
-      }
+  if (!isCollidingWithObstacle(nextX, nextZ)) {
+    cube.current.position.x = nextX;
+    cube.current.position.z = nextZ;
+  }
 
-      targetRotation.current = Math.atan2(moveX, moveZ);
-    }
+  targetRotation.current = Math.atan2(moveX, moveZ);
 
-    cube.current.rotation.y = THREE.MathUtils.lerp(
-      cube.current.rotation.y,
-      targetRotation.current,
-      0.15
-    );
+  while (targetRotation.current - cube.current.rotation.y > Math.PI) {
+    targetRotation.current -= Math.PI * 2;
+  }
+
+  while (targetRotation.current - cube.current.rotation.y < -Math.PI) {
+    targetRotation.current += Math.PI * 2;
+  }
+}
+
+const angleDifference = Math.atan2(
+  Math.sin(targetRotation.current - cube.current.rotation.y),
+  Math.cos(targetRotation.current - cube.current.rotation.y)
+);
+
+cube.current.rotation.y += angleDifference * 0.18;
 
     if (keys[" "] && isGrounded.current) {
       velocityY.current = 0.18;
