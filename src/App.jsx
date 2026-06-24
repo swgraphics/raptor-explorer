@@ -23,10 +23,17 @@ function Ground() {
 function Player() {
   const cube = useRef();
 
+  const velocityY = useRef(0);
+  const isGrounded = useRef(true);
+
   useFrame(({ camera }) => {
     if (!cube.current) return;
 
-    const speed = 0.1;
+    let speed = 0.1;
+
+    if (keys["shift"]) {
+      speed = 0.2;
+    }
 
     if (keys["w"]) {
       cube.current.position.z -= speed;
@@ -48,6 +55,28 @@ function Player() {
       cube.current.rotation.y = Math.PI / 2;
     }
 
+    // Jump
+
+    if (keys[" "] && isGrounded.current) {
+      velocityY.current = 0.18;
+      isGrounded.current = false;
+    }
+
+    // Gravity
+
+    velocityY.current -= 0.01;
+    cube.current.position.y += velocityY.current;
+
+    // Ground collision
+
+    if (cube.current.position.y <= 0.5) {
+      cube.current.position.y = 0.5;
+      velocityY.current = 0;
+      isGrounded.current = true;
+    }
+
+    // Camera
+
     camera.position.x = cube.current.position.x;
     camera.position.y = cube.current.position.y + 2;
     camera.position.z = cube.current.position.z + 5;
@@ -58,6 +87,7 @@ function Player() {
   return (
     <mesh ref={cube} position={[0, 0.5, 0]}>
       <boxGeometry args={[1, 1, 2]} />
+
       <meshBasicMaterial attach="material-0" color="green" />
       <meshBasicMaterial attach="material-1" color="green" />
       <meshBasicMaterial attach="material-2" color="green" />
