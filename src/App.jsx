@@ -12,6 +12,44 @@ window.addEventListener("keyup", (e) => {
   keys[e.key.toLowerCase()] = false;
 });
 
+const obstacles = [
+  {
+    name: "Mountain",
+    x: 0,
+    z: -6,
+    width: 4,
+    depth: 4,
+  },
+  {
+    name: "Tree",
+    x: 6,
+    z: -2,
+    width: 1.2,
+    depth: 1.2,
+  },
+];
+
+function isCollidingWithObstacle(x, z) {
+  const playerRadius = 0.7;
+
+  return obstacles.some((obstacle) => {
+    const halfWidth = obstacle.width / 2 + playerRadius;
+    const halfDepth = obstacle.depth / 2 + playerRadius;
+
+    return (
+      x > obstacle.x - halfWidth &&
+      x < obstacle.x + halfWidth &&
+      z > obstacle.z - halfDepth &&
+      z < obstacle.z + halfDepth
+    );
+  });
+}
+
+function clampToMap(value) {
+  const mapLimit = 24;
+  return Math.max(-mapLimit, Math.min(mapLimit, value));
+}
+
 function Ground() {
   return (
     <>
@@ -20,19 +58,16 @@ function Ground() {
         <meshStandardMaterial color="#d2b48c" />
       </mesh>
 
-      {/* Mountain test obstacle */}
       <mesh position={[0, 1.5, -6]}>
         <boxGeometry args={[4, 3, 4]} />
         <meshStandardMaterial color="#8b7355" />
       </mesh>
 
-      {/* Tree trunk test obstacle */}
       <mesh position={[6, 2, -2]}>
         <boxGeometry args={[0.8, 4, 0.8]} />
         <meshStandardMaterial color="#6b3f1d" />
       </mesh>
 
-      {/* Tree top test obstacle */}
       <mesh position={[6, 4.5, -2]}>
         <boxGeometry args={[3, 2, 3]} />
         <meshStandardMaterial color="#2f7d32" />
@@ -57,51 +92,57 @@ function Player() {
       speed = 0.2;
     }
 
+    let nextX = cube.current.position.x;
+    let nextZ = cube.current.position.z;
+
     if (keys["w"]) {
-      cube.current.position.z -= speed;
+      nextZ -= speed;
       targetRotation.current = Math.PI;
     }
 
     if (keys["s"]) {
-      cube.current.position.z += speed;
+      nextZ += speed;
       targetRotation.current = 0;
     }
 
     if (keys["a"]) {
-      cube.current.position.x -= speed;
+      nextX -= speed;
       targetRotation.current = -Math.PI / 2;
     }
 
     if (keys["d"]) {
-      cube.current.position.x += speed;
+      nextX += speed;
       targetRotation.current = Math.PI / 2;
     }
 
-    // Smooth rotation
+    nextX = clampToMap(nextX);
+    nextZ = clampToMap(nextZ);
+
+    if (!isCollidingWithObstacle(nextX, nextZ)) {
+      cube.current.position.x = nextX;
+      cube.current.position.z = nextZ;
+    }
+
     cube.current.rotation.y = THREE.MathUtils.lerp(
       cube.current.rotation.y,
       targetRotation.current,
       0.15
     );
 
-    // Jump
     if (keys[" "] && isGrounded.current) {
       velocityY.current = 0.18;
       isGrounded.current = false;
     }
 
-    // Slightly slower falling gravity
     velocityY.current -= 0.007;
     cube.current.position.y += velocityY.current;
 
-    // Ground collision
     if (cube.current.position.y <= 0.5) {
       cube.current.position.y = 0.5;
       velocityY.current = 0;
       isGrounded.current = true;
     }
 
-    // Smooth camera follow
     const targetCameraPosition = new THREE.Vector3(
       cube.current.position.x,
       cube.current.position.y + 2,
