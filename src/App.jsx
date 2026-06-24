@@ -3,6 +3,10 @@ import { useRef } from "react";
 import * as THREE from "three";
 
 const keys = {};
+const joystick = {
+  x: 0,
+  y: 0,
+};
 
 window.addEventListener("keydown", (e) => {
   keys[e.key.toLowerCase()] = true;
@@ -13,20 +17,8 @@ window.addEventListener("keyup", (e) => {
 });
 
 const obstacles = [
-  {
-    name: "Mountain",
-    x: 0,
-    z: -6,
-    width: 4,
-    depth: 4,
-  },
-  {
-    name: "Tree",
-    x: 6,
-    z: -2,
-    width: 1.2,
-    depth: 1.2,
-  },
+  { name: "Mountain", x: 0, z: -6, width: 4, depth: 4 },
+  { name: "Tree", x: 6, z: -2, width: 1.2, depth: 1.2 },
 ];
 
 function isCollidingWithObstacle(x, z) {
@@ -78,7 +70,6 @@ function Ground() {
 
 function Player() {
   const cube = useRef();
-
   const velocityY = useRef(0);
   const isGrounded = useRef(true);
   const targetRotation = useRef(0);
@@ -86,41 +77,34 @@ function Player() {
   useFrame(({ camera }) => {
     if (!cube.current) return;
 
-    let speed = 0.1;
+    let speed = keys["shift"] ? 0.2 : 0.1;
 
-    if (keys["shift"]) {
-      speed = 0.2;
-    }
+    let moveX = 0;
+    let moveZ = 0;
 
-    let nextX = cube.current.position.x;
-    let nextZ = cube.current.position.z;
+    if (keys["w"]) moveZ -= 1;
+    if (keys["s"]) moveZ += 1;
+    if (keys["a"]) moveX -= 1;
+    if (keys["d"]) moveX += 1;
 
-    if (keys["w"]) {
-      nextZ -= speed;
-      targetRotation.current = Math.PI;
-    }
+    moveX += joystick.x;
+    moveZ += joystick.y;
 
-    if (keys["s"]) {
-      nextZ += speed;
-      targetRotation.current = 0;
-    }
+    const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
 
-    if (keys["a"]) {
-      nextX -= speed;
-      targetRotation.current = -Math.PI / 2;
-    }
+    if (length > 0) {
+      moveX /= length;
+      moveZ /= length;
 
-    if (keys["d"]) {
-      nextX += speed;
-      targetRotation.current = Math.PI / 2;
-    }
+      const nextX = clampToMap(cube.current.position.x + moveX * speed);
+      const nextZ = clampToMap(cube.current.position.z + moveZ * speed);
 
-    nextX = clampToMap(nextX);
-    nextZ = clampToMap(nextZ);
+      if (!isCollidingWithObstacle(nextX, nextZ)) {
+        cube.current.position.x = nextX;
+        cube.current.position.z = nextZ;
+      }
 
-    if (!isCollidingWithObstacle(nextX, nextZ)) {
-      cube.current.position.x = nextX;
-      cube.current.position.z = nextZ;
+      targetRotation.current = Math.atan2(moveX, moveZ);
     }
 
     cube.current.rotation.y = THREE.MathUtils.lerp(
@@ -156,7 +140,6 @@ function Player() {
   return (
     <mesh ref={cube} position={[0, 0.5, 0]}>
       <boxGeometry args={[1, 1, 2]} />
-
       <meshBasicMaterial attach="material-0" color="green" />
       <meshBasicMaterial attach="material-1" color="green" />
       <meshBasicMaterial attach="material-2" color="green" />
@@ -167,16 +150,130 @@ function Player() {
   );
 }
 
+function MobileControls() {
+  const stickRef = useRef();
+  const knobRef = useRef();
+
+  const resetJoystick = () => {
+    joystick.x = 0;
+    joystick.y = 0;
+
+    if (knobRef.current) {
+      knobRef.current.style.transform = "translate(-50%, -50%)";
+    }
+  };
+
+  const moveJoystick = (e) => {
+    const touch = e.touches[0];
+    const rect = stickRef.current.getBoundingClientRect();
+
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+
+    let dx = touch.clientX - centerX;
+    let dy = touch.clientY - centerY;
+
+    const maxDistance = 40;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance > maxDistance) {
+      dx = (dx / distance) * maxDistance;
+      dy = (dy / distance) * maxDistance;
+    }
+
+    joystick.x = dx / maxDistance;
+    joystick.y = dy / maxDistance;
+
+    knobRef.current.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  };
+
+  return (
+    <div style={styles.mobileControls}>
+      <div
+        ref={stickRef}
+        style={styles.joystickBase}
+        onTouchStart={moveJoystick}
+        onTouchMove={moveJoystick}
+        onTouchEnd={resetJoystick}
+      >
+        <div ref={knobRef} style={styles.joystickKnob} />
+      </div>
+
+      <button
+        style={styles.jumpButton}
+        onTouchStart={() => {
+          keys[" "] = true;
+        }}
+        onTouchEnd={() => {
+          keys[" "] = false;
+        }}
+      >
+        Jump
+      </button>
+    </div>
+  );
+}
+
+const styles = {
+  mobileControls: {
+    position: "fixed",
+    left: 0,
+    bottom: 0,
+    width: "100%",
+    height: "180px",
+    pointerEvents: "none",
+  },
+  joystickBase: {
+    position: "absolute",
+    left: "40px",
+    bottom: "40px",
+    width: "110px",
+    height: "110px",
+    borderRadius: "50%",
+    background: "rgba(0, 0, 0, 0.25)",
+    pointerEvents: "auto",
+    touchAction: "none",
+  },
+  joystickKnob: {
+    position: "absolute",
+    left: "50%",
+    top: "50%",
+    width: "50px",
+    height: "50px",
+    borderRadius: "50%",
+    background: "rgba(255, 255, 255, 0.75)",
+    transform: "translate(-50%, -50%)",
+  },
+  jumpButton: {
+    position: "absolute",
+    right: "40px",
+    bottom: "55px",
+    width: "90px",
+    height: "90px",
+    borderRadius: "50%",
+    border: "none",
+    background: "rgba(255, 140, 0, 0.85)",
+    color: "white",
+    fontSize: "18px",
+    fontWeight: "bold",
+    pointerEvents: "auto",
+    touchAction: "none",
+  },
+};
+
 export default function App() {
   return (
-    <Canvas camera={{ position: [0, 2.5, 5] }}>
-      <color attach="background" args={["#87ceeb"]} />
+    <>
+      <Canvas camera={{ position: [0, 2.5, 5] }}>
+        <color attach="background" args={["#87ceeb"]} />
+        <ambientLight intensity={2} />
+        <directionalLight position={[5, 10, 5]} intensity={3} />
 
-      <ambientLight intensity={2} />
-      <directionalLight position={[5, 10, 5]} intensity={3} />
+        <Ground />
+        <Player />
+      </Canvas>
 
-      <Ground />
-      <Player />
-    </Canvas>
+      <MobileControls />
+    </>
   );
 }
