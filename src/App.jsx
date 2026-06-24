@@ -8,6 +8,8 @@ const joystick = {
   y: 0,
 };
 
+let sprintEnabled = false;
+
 window.addEventListener("keydown", (e) => {
   keys[e.key.toLowerCase()] = true;
 });
@@ -77,7 +79,10 @@ function Player() {
   useFrame(({ camera }, delta) => {
     if (!cube.current) return;
 
-    let speed = keys["shift"] ? 0.2 : 0.1;
+    let speed =
+  keys["shift"] || sprintEnabled
+    ? 0.2
+    : 0.1;
 
     let moveX = 0;
     let moveZ = 0;
@@ -207,7 +212,14 @@ function MobileControls() {
       >
         <div ref={knobRef} style={styles.joystickKnob} />
       </div>
-
+<button
+  style={styles.sprintButton}
+  onClick={() => {
+    sprintEnabled = !sprintEnabled;
+  }}
+>
+  Sprint
+</button>
       <button
         style={styles.jumpButton}
         onTouchStart={() => {
@@ -252,7 +264,26 @@ const styles = {
     borderRadius: "50%",
     background: "rgba(255, 255, 255, 0.75)",
     transform: "translate(-50%, -50%)",
-  },
+  sprintButton: {
+  position: "absolute",
+  right: "150px",
+  bottom: "75px",
+
+  width: "70px",
+  height: "70px",
+
+  borderRadius: "50%",
+  border: "none",
+
+  background: "rgba(50, 150, 255, 0.85)",
+  color: "white",
+
+  fontSize: "14px",
+  fontWeight: "bold",
+
+  pointerEvents: "auto",
+  touchAction: "none",
+},},
   jumpButton: {
     position: "absolute",
     right: "40px",
