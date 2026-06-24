@@ -1,4 +1,15 @@
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
+import { useRef } from "react";
+
+const keys = {};
+
+window.addEventListener("keydown", (e) => {
+  keys[e.key.toLowerCase()] = true;
+});
+
+window.addEventListener("keyup", (e) => {
+  keys[e.key.toLowerCase()] = false;
+});
 
 function Ground() {
   return (
@@ -9,9 +20,22 @@ function Ground() {
   );
 }
 
-function RaptorPlaceholder() {
+function Player() {
+  const cube = useRef();
+
+  useFrame(() => {
+    if (!cube.current) return;
+
+    const speed = 0.1;
+
+    if (keys["w"]) cube.current.position.z -= speed;
+    if (keys["s"]) cube.current.position.z += speed;
+    if (keys["a"]) cube.current.position.x -= speed;
+    if (keys["d"]) cube.current.position.x += speed;
+  });
+
   return (
-    <mesh position={[0, 0.5, 0]}>
+    <mesh ref={cube} position={[0, 0.5, 0]}>
       <boxGeometry args={[1, 1, 2]} />
       <meshStandardMaterial color="green" />
     </mesh>
@@ -32,7 +56,7 @@ export default function App() {
 
       <Ground />
 
-      <RaptorPlaceholder />
+      <Player />
     </Canvas>
   );
 }
