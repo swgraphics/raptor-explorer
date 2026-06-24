@@ -23,21 +23,47 @@ function Ground() {
 function Player() {
   const cube = useRef();
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     if (!cube.current) return;
 
     const speed = 0.1;
 
-    if (keys["w"]) cube.current.position.z -= speed;
-    if (keys["s"]) cube.current.position.z += speed;
-    if (keys["a"]) cube.current.position.x -= speed;
-    if (keys["d"]) cube.current.position.x += speed;
+    if (keys["w"]) {
+      cube.current.position.z -= speed;
+      cube.current.rotation.y = Math.PI;
+    }
+
+    if (keys["s"]) {
+      cube.current.position.z += speed;
+      cube.current.rotation.y = 0;
+    }
+
+    if (keys["a"]) {
+      cube.current.position.x -= speed;
+      cube.current.rotation.y = -Math.PI / 2;
+    }
+
+    if (keys["d"]) {
+      cube.current.position.x += speed;
+      cube.current.rotation.y = Math.PI / 2;
+    }
+
+    camera.position.x = cube.current.position.x;
+    camera.position.y = cube.current.position.y + 2;
+    camera.position.z = cube.current.position.z + 5;
+
+    camera.lookAt(cube.current.position);
   });
 
   return (
     <mesh ref={cube} position={[0, 0.5, 0]}>
       <boxGeometry args={[1, 1, 2]} />
-      <meshStandardMaterial color="green" />
+      <meshBasicMaterial attach="material-0" color="green" />
+      <meshBasicMaterial attach="material-1" color="green" />
+      <meshBasicMaterial attach="material-2" color="green" />
+      <meshBasicMaterial attach="material-3" color="green" />
+      <meshBasicMaterial attach="material-4" color="orange" />
+      <meshBasicMaterial attach="material-5" color="green" />
     </mesh>
   );
 }
@@ -49,10 +75,7 @@ export default function App() {
 
       <ambientLight intensity={2} />
 
-      <directionalLight
-        position={[5, 10, 5]}
-        intensity={3}
-      />
+      <directionalLight position={[5, 10, 5]} intensity={3} />
 
       <Ground />
 
