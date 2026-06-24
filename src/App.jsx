@@ -1,5 +1,6 @@
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useRef } from "react";
+import * as THREE from "three";
 
 const keys = {};
 
@@ -13,10 +14,30 @@ window.addEventListener("keyup", (e) => {
 
 function Ground() {
   return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry args={[50, 50]} />
-      <meshStandardMaterial color="#d2b48c" />
-    </mesh>
+    <>
+      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[50, 50]} />
+        <meshStandardMaterial color="#d2b48c" />
+      </mesh>
+
+      {/* Mountain test obstacle */}
+      <mesh position={[0, 1.5, -6]}>
+        <boxGeometry args={[4, 3, 4]} />
+        <meshStandardMaterial color="#8b7355" />
+      </mesh>
+
+      {/* Tree trunk test obstacle */}
+      <mesh position={[6, 2, -2]}>
+        <boxGeometry args={[0.8, 4, 0.8]} />
+        <meshStandardMaterial color="#6b3f1d" />
+      </mesh>
+
+      {/* Tree top test obstacle */}
+      <mesh position={[6, 4.5, -2]}>
+        <boxGeometry args={[3, 2, 3]} />
+        <meshStandardMaterial color="#2f7d32" />
+      </mesh>
+    </>
   );
 }
 
@@ -25,6 +46,7 @@ function Player() {
 
   const velocityY = useRef(0);
   const isGrounded = useRef(true);
+  const targetRotation = useRef(0);
 
   useFrame(({ camera }) => {
     if (!cube.current) return;
@@ -37,50 +59,56 @@ function Player() {
 
     if (keys["w"]) {
       cube.current.position.z -= speed;
-      cube.current.rotation.y = Math.PI;
+      targetRotation.current = Math.PI;
     }
 
     if (keys["s"]) {
       cube.current.position.z += speed;
-      cube.current.rotation.y = 0;
+      targetRotation.current = 0;
     }
 
     if (keys["a"]) {
       cube.current.position.x -= speed;
-      cube.current.rotation.y = -Math.PI / 2;
+      targetRotation.current = -Math.PI / 2;
     }
 
     if (keys["d"]) {
       cube.current.position.x += speed;
-      cube.current.rotation.y = Math.PI / 2;
+      targetRotation.current = Math.PI / 2;
     }
 
-    // Jump
+    // Smooth rotation
+    cube.current.rotation.y = THREE.MathUtils.lerp(
+      cube.current.rotation.y,
+      targetRotation.current,
+      0.15
+    );
 
+    // Jump
     if (keys[" "] && isGrounded.current) {
       velocityY.current = 0.18;
       isGrounded.current = false;
     }
 
-    // Gravity
-
-    velocityY.current -= 0.01;
+    // Slightly slower falling gravity
+    velocityY.current -= 0.007;
     cube.current.position.y += velocityY.current;
 
     // Ground collision
-
     if (cube.current.position.y <= 0.5) {
       cube.current.position.y = 0.5;
       velocityY.current = 0;
       isGrounded.current = true;
     }
 
-    // Camera
+    // Smooth camera follow
+    const targetCameraPosition = new THREE.Vector3(
+      cube.current.position.x,
+      cube.current.position.y + 2,
+      cube.current.position.z + 5
+    );
 
-    camera.position.x = cube.current.position.x;
-    camera.position.y = cube.current.position.y + 2;
-    camera.position.z = cube.current.position.z + 5;
-
+    camera.position.lerp(targetCameraPosition, 0.08);
     camera.lookAt(cube.current.position);
   });
 
@@ -100,15 +128,13 @@ function Player() {
 
 export default function App() {
   return (
-    <Canvas camera={{ position: [0, 6, 10] }}>
+    <Canvas camera={{ position: [0, 2.5, 5] }}>
       <color attach="background" args={["#87ceeb"]} />
 
       <ambientLight intensity={2} />
-
       <directionalLight position={[5, 10, 5]} intensity={3} />
 
       <Ground />
-
       <Player />
     </Canvas>
   );
