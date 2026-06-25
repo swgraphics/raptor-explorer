@@ -1,3 +1,4 @@
+import "./App.css";
 import { Canvas } from "@react-three/fiber";
 import { useState } from "react";
 
@@ -25,42 +26,46 @@ export default function App() {
   const [staminaPercent, setStaminaPercent] = useState(100);
 
   return (
-    <>
-      <Canvas camera={{ position: [0, 2.5, 5] }}>
+    <div className="game-frame">
+      <Canvas camera={{ position: [0, 2.5, 5], fov: 55 }}>
         <color attach="background" args={["#87ceeb"]} />
+
         <ambientLight intensity={2} />
         <directionalLight position={[5, 10, 5]} intensity={3} />
 
         <Ground />
+
         {gameStarted && <Player setStaminaPercent={setStaminaPercent} />}
       </Canvas>
 
       {!gameStarted && <TitleScreen onStart={() => setGameStarted(true)} />}
 
       {gameStarted && (
-  <>
-    <Hud staminaPercent={staminaPercent} />
-    <button
-      style={{
-        position: "fixed",
-        top: "20px",
-        right: "20px",
-        zIndex: 15,
-        padding: "10px 16px",
-        borderRadius: "999px",
-        border: "none",
-        background: "rgba(0,0,0,0.55)",
-        color: "white",
-        fontWeight: "bold",
-        cursor: "pointer",
-      }}
-      onClick={() => setGameStarted(false)}
-    >
-      MENU
-    </button>
-    <MobileControls />
-  </>
-)}
-    </>
+        <>
+          <Hud staminaPercent={staminaPercent} />
+
+          <button
+            style={{
+              position: "fixed",
+              top: "20px",
+              right: "20px",
+              zIndex: 50,
+              padding: "10px 16px",
+              borderRadius: "999px",
+              border: "none",
+              background: "rgba(0,0,0,0.55)",
+              color: "white",
+              fontWeight: "bold",
+              cursor: "pointer",
+            }}
+            onClick={() => setGameStarted(false)}
+          >
+            MENU
+          </button>
+
+          <MobileControls />
+        </>
+      )}
+    </div>
   );
 }

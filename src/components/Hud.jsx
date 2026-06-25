@@ -1,29 +1,43 @@
-import Ocean from "./Ocean";
-
-export default function Ground() {
+export default function Hud({ staminaPercent }) {
   return (
-    <>
-      <Ocean />
-
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[50, 50]} />
-        <meshStandardMaterial color="#d2b48c" />
-      </mesh>
-
-      <mesh position={[0, 1.5, -6]}>
-        <boxGeometry args={[4, 3, 4]} />
-        <meshStandardMaterial color="#8b7355" />
-      </mesh>
-
-      <mesh position={[6, 2, -2]}>
-        <boxGeometry args={[0.8, 4, 0.8]} />
-        <meshStandardMaterial color="#6b3f1d" />
-      </mesh>
-
-      <mesh position={[6, 4.5, -2]}>
-        <boxGeometry args={[3, 2, 3]} />
-        <meshStandardMaterial color="#2f7d32" />
-      </mesh>
-    </>
+    <div style={styles.hud}>
+      <div style={styles.staminaLabel}>Stamina</div>
+      <div style={styles.staminaOuter}>
+        <div
+          style={{
+            ...styles.staminaInner,
+            width: `${staminaPercent}%`,
+          }}
+        />
+      </div>
+    </div>
   );
 }
+
+const styles = {
+  hud: {
+    position: "fixed",
+    top: "20px",
+    left: "20px",
+    zIndex: 50,
+    width: "180px",
+    fontFamily: "Arial, sans-serif",
+    color: "white",
+    pointerEvents: "none",
+  },
+  staminaLabel: {
+    fontSize: "14px",
+    marginBottom: "6px",
+  },
+  staminaOuter: {
+    width: "100%",
+    height: "14px",
+    borderRadius: "999px",
+    background: "rgba(0,0,0,0.45)",
+    overflow: "hidden",
+  },
+  staminaInner: {
+    height: "100%",
+    background: "linear-gradient(90deg, #37d67a, #fff176)",
+  },
+};
