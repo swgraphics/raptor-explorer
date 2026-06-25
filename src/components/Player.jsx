@@ -1,6 +1,6 @@
 import Raptor from "./Raptor";
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import * as THREE from "three";
 
 import {
@@ -12,12 +12,11 @@ import {
 } from "./gameState";
 
 export default function Player({ setStaminaPercent }) {
-  const cube = useRef();
-  
-  const isMovingRef = useRef(false);
-  const isSprintingRef = useRef(false);
-  const isJumpingRef = useRef(false);
-  
+  const player = useRef();
+
+  const [animationState, setAnimationState] = useState("idle");
+  const currentAnimation = useRef("idle");
+
   const velocityY = useRef(0);
   const isGrounded = useRef(true);
   const targetRotation = useRef(0);
@@ -26,26 +25,22 @@ export default function Player({ setStaminaPercent }) {
   const jumpsUsed = useRef(0);
   const landingCooldown = useRef(0);
 
+  const jumpDelay = useRef(0);
+  const queuedJumpPower = useRef(0);
+
+  const changeAnimation = (nextAnimation) => {
+    if (currentAnimation.current !== nextAnimation) {
+      currentAnimation.current = nextAnimation;
+      setAnimationState(nextAnimation);
+    }
+  };
+
   useFrame(({ camera }, delta) => {
-    if (!cube.current) return;
+    if (!player.current) return;
 
     if (landingCooldown.current > 0) {
       landingCooldown.current -= delta;
     }
-
-    const wantsSprint = keys["shift"] || mobileState.sprintEnabled;
-    const canSprint = stamina.current > 0;
-    const isSprinting = wantsSprint && canSprint;
-
-    const speed = isSprinting ? 0.2 : 0.1;
-
-    if (isSprinting) {
-      stamina.current = Math.max(0, stamina.current - 28 * delta);
-    } else {
-      stamina.current = Math.min(100, stamina.current + 18 * delta);
-    }
-
-    setStaminaPercent(Math.round(stamina.current));
 
     let moveX = 0;
     let moveZ = 0;
@@ -58,88 +53,118 @@ export default function Player({ setStaminaPercent }) {
     moveX += joystick.x;
     moveZ += joystick.y;
 
-    const length = Math.sqrt(moveX * moveX + moveZ * moveZ);
-    isMovingRef.current = length > 0;
-    isSprintingRef.current = isSprinting;
-    isJumpingRef.current = !isGrounded.current;
-    
-    if (length > 0) {
-      moveX /= length;
-      moveZ /= length;
+    const inputLength = Math.sqrt(moveX * moveX + moveZ * moveZ);
+    const isMoving = inputLength > 0;
 
-      const nextX = clampToMap(cube.current.position.x + moveX * speed);
-      const nextZ = clampToMap(cube.current.position.z + moveZ * speed);
+    const wantsSprint = keys["shift"] || mobileState.sprintEnabled;
+    const canSprint = stamina.current > 0;
+    const isSprinting = wantsSprint && canSprint && isMoving;
+
+    const speed = isSprinting ? 0.2 : 0.1;
+
+    if (isSprinting) {
+      stamina.current = Math.max(0, stamina.current - 28 * delta);
+    } else {
+      stamina.current = Math.min(100, stamina.current + 18 * delta);
+    }
+
+    setStaminaPercent(Math.round(stamina.current));
+
+    if (isMoving) {
+      moveX /= inputLength;
+      moveZ /= inputLength;
+
+      const nextX = clampToMap(player.current.position.x + moveX * speed);
+      const nextZ = clampToMap(player.current.position.z + moveZ * speed);
 
       if (!isCollidingWithObstacle(nextX, nextZ)) {
-        cube.current.position.x = nextX;
-        cube.current.position.z = nextZ;
+        player.current.position.x = nextX;
+        player.current.position.z = nextZ;
       }
 
       targetRotation.current = Math.atan2(moveX, moveZ);
 
-      while (targetRotation.current - cube.current.rotation.y > Math.PI) {
+      while (targetRotation.current - player.current.rotation.y > Math.PI) {
         targetRotation.current -= Math.PI * 2;
       }
 
-      while (targetRotation.current - cube.current.rotation.y < -Math.PI) {
+      while (targetRotation.current - player.current.rotation.y < -Math.PI) {
         targetRotation.current += Math.PI * 2;
       }
     }
 
     const angleDifference = Math.atan2(
-      Math.sin(targetRotation.current - cube.current.rotation.y),
-      Math.cos(targetRotation.current - cube.current.rotation.y)
+      Math.sin(targetRotation.current - player.current.rotation.y),
+      Math.cos(targetRotation.current - player.current.rotation.y)
     );
 
-    cube.current.rotation.y += angleDifference * 0.18;
+    player.current.rotation.y += angleDifference * 0.18;
 
     if (keys["jumpPressed"]) {
       const canFirstJump = isGrounded.current && landingCooldown.current <= 0;
       const canDoubleJump = !isGrounded.current && jumpsUsed.current === 1;
 
       if (canFirstJump) {
-        velocityY.current = 0.18;
-        isGrounded.current = false;
+        changeAnimation("jump");
+        jumpDelay.current = 0.25;
+        queuedJumpPower.current = 0.18;
         jumpsUsed.current = 1;
       } else if (canDoubleJump) {
         velocityY.current = 0.16;
         jumpsUsed.current = 2;
+        changeAnimation("jump");
       }
 
       keys["jumpPressed"] = false;
     }
 
-    velocityY.current -= 0.006;
-    cube.current.position.y += velocityY.current;
+    if (jumpDelay.current > 0) {
+      jumpDelay.current -= delta;
 
-    if (cube.current.position.y <= 0.5) {
+      if (jumpDelay.current <= 0) {
+        velocityY.current = queuedJumpPower.current;
+        queuedJumpPower.current = 0;
+        isGrounded.current = false;
+      }
+    }
+
+    velocityY.current -= 0.006;
+    player.current.position.y += velocityY.current;
+
+    if (player.current.position.y <= 0.5) {
       if (!isGrounded.current) {
         landingCooldown.current = 0.5;
       }
 
-      cube.current.position.y = 0.5;
+      player.current.position.y = 0.5;
       velocityY.current = 0;
       isGrounded.current = true;
       jumpsUsed.current = 0;
     }
 
+    if (jumpDelay.current > 0 || !isGrounded.current) {
+      changeAnimation("jump");
+    } else if (isSprinting) {
+      changeAnimation("run");
+    } else if (isMoving) {
+      changeAnimation("walk");
+    } else {
+      changeAnimation("idle");
+    }
+
     const targetCameraPosition = new THREE.Vector3(
-      cube.current.position.x,
-      cube.current.position.y + 3,
-      cube.current.position.z + 8
+      player.current.position.x,
+      player.current.position.y + 3,
+      player.current.position.z + 8
     );
 
     camera.position.lerp(targetCameraPosition, 0.08);
-    camera.lookAt(cube.current.position);
+    camera.lookAt(player.current.position);
   });
 
   return (
-  <group ref={cube} position={[0, 0.5, 0]}>
-    <Raptor
-      isMoving={isMovingRef.current}
-      isSprinting={isSprintingRef.current}
-      isJumping={isJumpingRef.current}
-    />
-  </group>
-);
+    <group ref={player} position={[0, 0.5, 0]}>
+      <Raptor animationState={animationState} />
+    </group>
+  );
 }

@@ -1,42 +1,42 @@
 import { useGLTF, useAnimations } from "@react-three/drei";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
-export default function Raptor({ isMoving, isSprinting, isJumping }) {
+const animationMap = {
+  idle: "Armature|Velociraptor_Idle",
+  walk: "Armature|Velociraptor_Walk",
+  run: "Armature|Velociraptor_Run",
+  jump: "Armature|Velociraptor_Jump",
+};
+
+export default function Raptor({ animationState }) {
+  const raptor = useRef();
+
   const { scene, animations } = useGLTF("/models/raptor.glb");
-  const { actions } = useAnimations(animations, scene);
+  const { actions } = useAnimations(animations, raptor);
 
   useEffect(() => {
-    console.log("Raptor animations:", Object.keys(actions));
-  }, [actions]);
+    const animationName = animationMap[animationState] || animationMap.idle;
+    const nextAction = actions[animationName];
 
-  useEffect(() => {
-    const animationName = isJumping
-      ? "Jump"
-      : isMoving
-      ? isSprinting
-        ? "Run"
-        : "Walk"
-      : "Idle";
+    if (!nextAction) return;
 
-    const action = actions[animationName];
+    Object.values(actions).forEach((action) => {
+      if (action !== nextAction) {
+        action.fadeOut(0.2);
+      }
+    });
 
-    if (!action) return;
-
-    Object.values(actions).forEach((a) => a.stop());
-
-    action.reset().fadeIn(0.2).play();
-
-    return () => {
-      action.fadeOut(0.2);
-    };
-  }, [actions, isMoving, isSprinting, isJumping]);
+    nextAction.reset().fadeIn(0.2).play();
+  }, [actions, animationState]);
 
   return (
-    <primitive
-      object={scene}
-      scale={0.5}
-      position={[0, -0.5, 0]}
-      rotation={[0, 0, 0]}
-    />
+    <group ref={raptor}>
+      <primitive
+        object={scene}
+        scale={0.5}
+        position={[0, -0.5, 0]}
+        rotation={[0, 0, 0]}
+      />
+    </group>
   );
 }
