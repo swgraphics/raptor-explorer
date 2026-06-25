@@ -125,8 +125,8 @@ export default function Player({ setStaminaPercent }) {
 
     const targetCameraPosition = new THREE.Vector3(
       cube.current.position.x,
-      cube.current.position.y + 2,
-      cube.current.position.z + 5
+      cube.current.position.y + 3,
+      cube.current.position.z + 8
     );
 
     camera.position.lerp(targetCameraPosition, 0.08);
