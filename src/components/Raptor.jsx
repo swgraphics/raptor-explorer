@@ -1,9 +1,10 @@
 import { useGLTF, useAnimations } from "@react-three/drei";
 import { useEffect, useRef } from "react";
+import * as THREE from "three";
 
 const animationMap = {
   idle: "Armature|Velociraptor_Idle",
-  walk: "Armature|Velociraptor_Walk",
+  walk: "Armature|Velociraptor_Run",
   run: "Armature|Velociraptor_Run",
   jump: "Armature|Velociraptor_Jump",
 };
@@ -26,7 +27,19 @@ export default function Raptor({ animationState }) {
       }
     });
 
-    nextAction.reset().fadeIn(0.2).play();
+
+if (animationState === "walk") {
+  nextAction.timeScale = 0.55;
+} else if (animationState === "run") {
+  nextAction.timeScale = 1.1;
+} else {
+  nextAction.timeScale = 1;
+}
+
+nextAction.enabled = true;
+nextAction.setLoop(THREE.LoopRepeat);
+nextAction.clampWhenFinished = false;
+nextAction.fadeIn(0.2).play();
   }, [actions, animationState]);
 
   return (
