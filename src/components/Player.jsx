@@ -164,6 +164,13 @@ export default function Player({ setStaminaPercent, selectedDinosaur }) {
 
     const cameraConfig =
     cameraSettings[selectedDinosaur] || cameraSettings.velociraptor;
+if (!cameraControls.isDragging) {
+  cameraControls.angle = THREE.MathUtils.lerp(
+    cameraControls.angle,
+    0,
+    0.08
+  );
+}
 
 const cameraX =
   player.current.position.x +

@@ -65,11 +65,11 @@ export default function Raptor({ animationState, selectedDinosaur }) {
   return (
     <group ref={raptor}>
       <primitive
-        object={scene}
-        scale={0.5}
-        position={[0, -0.5, 0]}
-        rotation={[0, 0, 0]}
-      />
+  object={scene}
+  scale={0.5}
+  position={[0, -0.5, 0]}
+  rotation={[0, 0, 0]}
+/>
     </group>
   );
 }

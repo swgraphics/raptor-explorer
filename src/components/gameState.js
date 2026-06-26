@@ -11,6 +11,8 @@ export const mobileState = {
 
 export const cameraControls = {
   angle: 0,
+  isDragging: false,
+  lastX: 0,
 };
 
 export const obstacles = [

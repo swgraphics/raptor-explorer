@@ -39,7 +39,7 @@ window.addEventListener("pointermove", (e) => {
   const deltaX = e.clientX - lastPointerX;
   lastPointerX = e.clientX;
 
-  cameraControls.angle -= deltaX * 0.01;
+  cameraControls.angle -= deltaX * 0.04;
 });
 
 window.addEventListener("pointerup", () => {
@@ -103,7 +103,35 @@ export default function App() {
           >
             MENU
           </button>
+<div
+  style={{
+    position: "fixed",
+    right: 0,
+    top: 0,
+    width: "50%",
+    height: "100%",
+    zIndex: 8,
+    touchAction: "none",
+  }}
+  onPointerDown={(e) => {
+    cameraControls.isDragging = true;
+    cameraControls.lastX = e.clientX;
+  }}
+  onPointerMove={(e) => {
+    if (!cameraControls.isDragging) return;
 
+    const deltaX = e.clientX - cameraControls.lastX;
+    cameraControls.lastX = e.clientX;
+
+    cameraControls.angle -= deltaX * 0.04;
+  }}
+  onPointerUp={() => {
+    cameraControls.isDragging = false;
+  }}
+  onPointerCancel={() => {
+    cameraControls.isDragging = false;
+  }}
+/>
           <MobileControls />
         </>
       )}
