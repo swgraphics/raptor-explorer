@@ -11,6 +11,15 @@ import {
   clampToMap,
 } from "./gameState";
 
+const cameraSettings = {
+  velociraptor: { height: 3, distance: 8 },
+  triceratops: { height: 4, distance: 11 },
+  stegosaurus: { height: 4, distance: 11 },
+  parasaurolophus: { height: 4, distance: 11 },
+  trex: { height: 5, distance: 15 },
+  apatosaurus: { height: 6, distance: 18 },
+};
+
 export default function Player({ setStaminaPercent, selectedDinosaur }) {
   const player = useRef();
 
@@ -152,11 +161,14 @@ export default function Player({ setStaminaPercent, selectedDinosaur }) {
       changeAnimation("idle");
     }
 
-    const targetCameraPosition = new THREE.Vector3(
-      player.current.position.x,
-      player.current.position.y + 3,
-      player.current.position.z + 8
-    );
+    const cameraConfig =
+    cameraSettings[selectedDinosaur] || cameraSettings.velociraptor;
+
+const targetCameraPosition = new THREE.Vector3(
+  player.current.position.x,
+  player.current.position.y + cameraConfig.height,
+  player.current.position.z + cameraConfig.distance
+);
 
     camera.position.lerp(targetCameraPosition, 0.08);
     camera.lookAt(player.current.position);
