@@ -2,24 +2,45 @@ import { useGLTF, useAnimations } from "@react-three/drei";
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const animationMap = {
-  idle: "Armature|Velociraptor_Idle",
-  walk: "Armature|Velociraptor_Run",
-  run: "Armature|Velociraptor_Run",
-  jump: "Armature|Velociraptor_Jump",
+const dinosaurNames = {
+  velociraptor: "Velociraptor",
+  trex: "TRex",
+  triceratops: "Triceratops",
+  stegosaurus: "Stegosaurus",
+  parasaurolophus: "Parasaurolophus",
+  apatosaurus: "Apatosaurus",
 };
 
-export default function Raptor({ animationState }) {
+function getAnimationMap(selectedDinosaur) {
+  const name = dinosaurNames[selectedDinosaur];
+
+  return {
+    idle: `Armature|${name}_Idle`,
+    walk:
+      selectedDinosaur === "velociraptor"
+        ? `Armature|${name}_Run`
+        : `Armature|${name}_Walk`,
+    run: `Armature|${name}_Run`,
+    jump: `Armature|${name}_Jump`,
+  };
+}
+
+export default function Raptor({ animationState, selectedDinosaur }) {
   const raptor = useRef();
 
-  const { scene, animations } = useGLTF("/models/raptor.glb");
+  const { scene, animations } = useGLTF(`/models/${selectedDinosaur}.glb`);
   const { actions } = useAnimations(animations, raptor);
 
   useEffect(() => {
+    const animationMap = getAnimationMap(selectedDinosaur);
     const animationName = animationMap[animationState] || animationMap.idle;
     const nextAction = actions[animationName];
 
-    if (!nextAction) return;
+    if (!nextAction) {
+      console.log("Missing animation:", animationName);
+      console.log("Available animations:", Object.keys(actions));
+      return;
+    }
 
     Object.values(actions).forEach((action) => {
       if (action !== nextAction) {
@@ -27,20 +48,19 @@ export default function Raptor({ animationState }) {
       }
     });
 
+    if (animationState === "walk") {
+      nextAction.timeScale = selectedDinosaur === "velociraptor" ? 0.55 : 1;
+    } else if (animationState === "run") {
+      nextAction.timeScale = 1.1;
+    } else {
+      nextAction.timeScale = 1;
+    }
 
-if (animationState === "walk") {
-  nextAction.timeScale = 0.55;
-} else if (animationState === "run") {
-  nextAction.timeScale = 1.1;
-} else {
-  nextAction.timeScale = 1;
-}
-
-nextAction.enabled = true;
-nextAction.setLoop(THREE.LoopRepeat);
-nextAction.clampWhenFinished = false;
-nextAction.fadeIn(0.2).play();
-  }, [actions, animationState]);
+    nextAction.enabled = true;
+    nextAction.setLoop(THREE.LoopRepeat);
+    nextAction.clampWhenFinished = false;
+    nextAction.fadeIn(0.2).play();
+  }, [actions, animationState, selectedDinosaur]);
 
   return (
     <group ref={raptor}>

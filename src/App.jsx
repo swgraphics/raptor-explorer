@@ -24,6 +24,7 @@ window.addEventListener("keyup", (e) => {
 export default function App() {
   const [gameStarted, setGameStarted] = useState(false);
   const [staminaPercent, setStaminaPercent] = useState(100);
+  const [selectedDinosaur, setSelectedDinosaur] = useState("velociraptor");
 
   return (
     <div className="game-frame">
@@ -35,10 +36,21 @@ export default function App() {
 
         <Ground />
 
-        {gameStarted && <Player setStaminaPercent={setStaminaPercent} />}
+        {gameStarted && (
+          <Player
+            setStaminaPercent={setStaminaPercent}
+            selectedDinosaur={selectedDinosaur}
+          />
+        )}
       </Canvas>
 
-      {!gameStarted && <TitleScreen onStart={() => setGameStarted(true)} />}
+      {!gameStarted && (
+        <TitleScreen
+          onStart={() => setGameStarted(true)}
+          selectedDinosaur={selectedDinosaur}
+          setSelectedDinosaur={setSelectedDinosaur}
+        />
+      )}
 
       {gameStarted && (
         <>

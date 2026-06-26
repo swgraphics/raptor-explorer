@@ -11,7 +11,7 @@ import {
   clampToMap,
 } from "./gameState";
 
-export default function Player({ setStaminaPercent }) {
+export default function Player({ setStaminaPercent, selectedDinosaur }) {
   const player = useRef();
 
   const [animationState, setAnimationState] = useState("idle");
@@ -164,7 +164,10 @@ export default function Player({ setStaminaPercent }) {
 
   return (
     <group ref={player} position={[0, 0.5, 0]}>
-      <Raptor animationState={animationState} />
+      <Raptor
+      animationState={animationState}
+      selectedDinosaur={selectedDinosaur}
+/>
     </group>
   );
 }
