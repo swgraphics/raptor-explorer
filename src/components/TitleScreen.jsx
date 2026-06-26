@@ -1,7 +1,19 @@
 export default function TitleScreen({ onStart }) {
   return (
     <div style={styles.titleScreen}>
-      <h1 style={styles.titleText}>THE WORLD IS LAVA</h1>
+      <div className="embers">
+        <span className="ember" />
+        <span className="ember" />
+        <span className="ember" />
+        <span className="ember" />
+        <span className="ember" />
+      </div>
+
+      <div className="smoke one" />
+      <div className="smoke two" />
+
+      <img src="/logo.png" alt="The World is Lava" className="title-logo" />
+
       <button style={styles.startButton} onClick={onStart}>
         START GAME
       </button>
@@ -22,14 +34,9 @@ const styles = {
     justifyContent: "center",
     color: "white",
     fontFamily: "Arial, sans-serif",
+    overflow: "hidden",
   },
-  titleText: {
-    fontSize: "52px",
-    letterSpacing: "4px",
-    textAlign: "center",
-    marginBottom: "30px",
-    textShadow: "0 6px 18px rgba(0,0,0,0.45)",
-  },
+
   startButton: {
     padding: "18px 34px",
     borderRadius: "999px",
@@ -39,5 +46,6 @@ const styles = {
     fontSize: "20px",
     fontWeight: "bold",
     cursor: "pointer",
+    zIndex: 2,
   },
 };
