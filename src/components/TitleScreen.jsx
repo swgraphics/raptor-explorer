@@ -1,6 +1,8 @@
 export default function TitleScreen({ onStart }) {
   return (
     <div style={styles.titleScreen}>
+      <div style={styles.overlay} />
+
       <div className="embers">
         <span className="ember" />
         <span className="ember" />
@@ -26,15 +28,24 @@ const styles = {
     position: "fixed",
     inset: 0,
     zIndex: 20,
-    background:
-      "linear-gradient(180deg, #ff7a18 0%, #af002d 55%, #240000 100%)",
+
+    backgroundImage: "url('/background.png')",
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+    backgroundRepeat: "no-repeat",
+
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    color: "white",
-    fontFamily: "Arial, sans-serif",
     overflow: "hidden",
+  },
+
+  overlay: {
+    position: "absolute",
+    inset: 0,
+    background: "rgba(0,0,0,0.35)",
+    zIndex: 0,
   },
 
   startButton: {
