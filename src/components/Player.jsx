@@ -7,6 +7,7 @@ import {
   keys,
   joystick,
   mobileState,
+  cameraControls,
   isCollidingWithObstacle,
   clampToMap,
 } from "./gameState";
@@ -164,10 +165,18 @@ export default function Player({ setStaminaPercent, selectedDinosaur }) {
     const cameraConfig =
     cameraSettings[selectedDinosaur] || cameraSettings.velociraptor;
 
+const cameraX =
+  player.current.position.x +
+  Math.sin(cameraControls.angle) * cameraConfig.distance;
+
+const cameraZ =
+  player.current.position.z +
+  Math.cos(cameraControls.angle) * cameraConfig.distance;
+
 const targetCameraPosition = new THREE.Vector3(
-  player.current.position.x,
+  cameraX,
   player.current.position.y + cameraConfig.height,
-  player.current.position.z + cameraConfig.distance
+  cameraZ
 );
 
     camera.position.lerp(targetCameraPosition, 0.08);

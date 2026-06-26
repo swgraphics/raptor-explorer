@@ -7,7 +7,7 @@ import Player from "./components/Player";
 import MobileControls from "./components/MobileControls";
 import Hud from "./components/Hud";
 import TitleScreen from "./components/TitleScreen";
-import { keys } from "./components/gameState";
+import { keys, cameraControls } from "./components/gameState";
 
 window.addEventListener("keydown", (e) => {
   keys[e.key.toLowerCase()] = true;
@@ -19,6 +19,35 @@ window.addEventListener("keydown", (e) => {
 
 window.addEventListener("keyup", (e) => {
   keys[e.key.toLowerCase()] = false;
+});
+
+let isDraggingCamera = false;
+let lastPointerX = 0;
+
+window.addEventListener("pointerdown", (e) => {
+  const screenWidth = window.innerWidth;
+
+  if (e.clientX > screenWidth / 2) {
+    isDraggingCamera = true;
+    lastPointerX = e.clientX;
+  }
+});
+
+window.addEventListener("pointermove", (e) => {
+  if (!isDraggingCamera) return;
+
+  const deltaX = e.clientX - lastPointerX;
+  lastPointerX = e.clientX;
+
+  cameraControls.angle -= deltaX * 0.01;
+});
+
+window.addEventListener("pointerup", () => {
+  isDraggingCamera = false;
+});
+
+window.addEventListener("pointercancel", () => {
+  isDraggingCamera = false;
 });
 
 export default function App() {
