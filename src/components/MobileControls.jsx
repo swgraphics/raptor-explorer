@@ -1,9 +1,10 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { keys, joystick, mobileState } from "./gameState";
 
 export default function MobileControls() {
   const stickRef = useRef();
   const knobRef = useRef();
+  const [sprintOn, setSprintOn] = useState(mobileState.sprintEnabled);
 
   const resetJoystick = () => {
     joystick.x = 0;
@@ -15,6 +16,8 @@ export default function MobileControls() {
   };
 
   const moveJoystick = (e) => {
+    e.preventDefault();
+
     const touch = e.touches[0];
     const rect = stickRef.current.getBoundingClientRect();
 
@@ -38,6 +41,13 @@ export default function MobileControls() {
     knobRef.current.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
   };
 
+  const toggleSprint = (e) => {
+    e.preventDefault();
+
+    mobileState.sprintEnabled = !mobileState.sprintEnabled;
+    setSprintOn(mobileState.sprintEnabled);
+  };
+
   return (
     <div style={styles.mobileControls}>
       <div
@@ -51,20 +61,19 @@ export default function MobileControls() {
       </div>
 
       <button
-        style={styles.sprintButton}
-        onClick={() => {
-          mobileState.sprintEnabled = !mobileState.sprintEnabled;
+        style={{
+          ...styles.sprintButton,
+          ...(sprintOn ? styles.sprintButtonActive : {}),
         }}
+        onTouchStart={toggleSprint}
       >
         Sprint
       </button>
 
       <button
         style={styles.jumpButton}
-        onTouchStart={() => {
-          keys["jumpPressed"] = true;
-        }}
-        onClick={() => {
+        onTouchStart={(e) => {
+          e.preventDefault();
           keys["jumpPressed"] = true;
         }}
       >
@@ -80,55 +89,66 @@ const styles = {
     left: 0,
     bottom: 0,
     width: "100%",
-    height: "180px",
+    height: "210px",
     pointerEvents: "none",
     zIndex: 10,
   },
+
   joystickBase: {
     position: "absolute",
-    left: "40px",
-    bottom: "40px",
-    width: "110px",
-    height: "110px",
+    left: "28px",
+    bottom: "42px",
+    width: "118px",
+    height: "118px",
     borderRadius: "50%",
-    background: "rgba(0, 0, 0, 0.25)",
+    background: "rgba(0, 0, 0, 0.28)",
+    border: "2px solid rgba(255,255,255,0.22)",
     pointerEvents: "auto",
     touchAction: "none",
   },
+
   joystickKnob: {
     position: "absolute",
     left: "50%",
     top: "50%",
-    width: "50px",
-    height: "50px",
+    width: "52px",
+    height: "52px",
     borderRadius: "50%",
-    background: "rgba(255, 255, 255, 0.75)",
+    background: "rgba(255, 255, 255, 0.78)",
     transform: "translate(-50%, -50%)",
   },
+
   sprintButton: {
     position: "absolute",
-    right: "150px",
-    bottom: "75px",
-    width: "70px",
-    height: "70px",
+    right: "132px",
+    bottom: "70px",
+    width: "74px",
+    height: "74px",
     borderRadius: "50%",
-    border: "none",
-    background: "rgba(50, 150, 255, 0.85)",
+    border: "2px solid rgba(255,255,255,0.3)",
+    background: "rgba(40, 40, 40, 0.72)",
     color: "white",
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "bold",
     pointerEvents: "auto",
     touchAction: "none",
   },
+
+  sprintButtonActive: {
+    background: "rgba(255, 110, 0, 0.95)",
+    boxShadow: "0 0 18px rgba(255, 120, 0, 0.9)",
+    transform: "scale(1.05)",
+  },
+
   jumpButton: {
     position: "absolute",
-    right: "40px",
-    bottom: "55px",
-    width: "90px",
-    height: "90px",
+    right: "28px",
+    bottom: "48px",
+    width: "92px",
+    height: "92px",
     borderRadius: "50%",
-    border: "none",
-    background: "rgba(255, 140, 0, 0.85)",
+    border: "2px solid rgba(255,255,255,0.35)",
+    background: "rgba(255, 140, 0, 0.9)",
     color: "white",
     fontSize: "18px",
     fontWeight: "bold",
