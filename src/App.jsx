@@ -1,12 +1,14 @@
 import "./App.css";
 import { Canvas } from "@react-three/fiber";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import Ground from "./components/Ground";
 import Player from "./components/Player";
 import MobileControls from "./components/MobileControls";
 import Hud from "./components/Hud";
 import TitleScreen from "./components/TitleScreen";
+import LavaSpread from "./components/LavaSpread";
+import SafeZone, { safeZonePosition } from "./components/SafeZone";
 import { keys, cameraControls } from "./components/gameState";
 
 window.addEventListener("keydown", (e) => {
@@ -25,10 +27,9 @@ let isDraggingCamera = false;
 let lastPointerX = 0;
 
 window.addEventListener("pointerdown", (e) => {
-  const screenWidth = window.innerWidth;
-
-  if (e.clientX > screenWidth / 2) {
+  if (e.clientX > window.innerWidth / 2) {
     isDraggingCamera = true;
+    cameraControls.isDragging = true;
     lastPointerX = e.clientX;
   }
 });
@@ -44,16 +45,98 @@ window.addEventListener("pointermove", (e) => {
 
 window.addEventListener("pointerup", () => {
   isDraggingCamera = false;
+  cameraControls.isDragging = false;
 });
 
 window.addEventListener("pointercancel", () => {
   isDraggingCamera = false;
+  cameraControls.isDragging = false;
 });
 
 export default function App() {
-  const [gameStarted, setGameStarted] = useState(false);
+  const [gamePhase, setGamePhase] = useState("menu");
+  const [countdown, setCountdown] = useState(3);
   const [staminaPercent, setStaminaPercent] = useState(100);
   const [selectedDinosaur, setSelectedDinosaur] = useState("velociraptor");
+  const [playerPosition, setPlayerPosition] = useState({ x: 0, z: 0 });
+  const [runTime, setRunTime] = useState(0);
+  const [bestTime, setBestTime] = useState(() => {
+    const saved = localStorage.getItem("bestTime");
+    return saved ? Number(saved) : null;
+  });
+
+  const lavaRadius = useRef(0);
+
+  const startRun = () => {
+    lavaRadius.current = 0;
+    setRunTime(0);
+    setCountdown(3);
+    setGamePhase("countdown");
+  };
+
+  const returnToMenu = () => {
+    lavaRadius.current = 0;
+    setGamePhase("menu");
+  };
+
+  useEffect(() => {
+    if (gamePhase !== "countdown") return;
+
+    if (countdown <= 0) {
+      setGamePhase("playing");
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCountdown((current) => current - 1);
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [gamePhase, countdown]);
+
+  useEffect(() => {
+    if (gamePhase !== "playing") return;
+
+    const timer = setInterval(() => {
+      setRunTime((current) => current + 0.1);
+    }, 100);
+
+    return () => clearInterval(timer);
+  }, [gamePhase]);
+
+  useEffect(() => {
+    if (gamePhase !== "playing") return;
+
+    const lavaSource = { x: 0, z: -18 };
+    const dx = playerPosition.x - lavaSource.x;
+    const dz = playerPosition.z - lavaSource.z;
+    const distanceToLavaSource = Math.sqrt(dx * dx + dz * dz);
+
+    if (distanceToLavaSource < lavaRadius.current) {
+      setGamePhase("gameover");
+    }
+  }, [playerPosition, gamePhase]);
+
+  useEffect(() => {
+    if (gamePhase !== "playing") return;
+
+    const dx = playerPosition.x - safeZonePosition.x;
+    const dz = playerPosition.z - safeZonePosition.z;
+    const distanceToSafeZone = Math.sqrt(dx * dx + dz * dz);
+
+    if (distanceToSafeZone < safeZonePosition.radius + 1) {
+      const finalTime = Number(runTime.toFixed(1));
+
+      if (bestTime === null || finalTime < bestTime) {
+        setBestTime(finalTime);
+        localStorage.setItem("bestTime", String(finalTime));
+      }
+
+      setGamePhase("victory");
+    }
+  }, [playerPosition, gamePhase, runTime, bestTime]);
+
+  const gameActive = gamePhase !== "menu";
 
   return (
     <div className="game-frame">
@@ -65,76 +148,134 @@ export default function App() {
 
         <Ground />
 
-        {gameStarted && (
-          <Player
-            setStaminaPercent={setStaminaPercent}
-            selectedDinosaur={selectedDinosaur}
-          />
+        {gameActive && (
+          <>
+            <SafeZone />
+            <LavaSpread
+              active={gamePhase === "playing"}
+              radiusRef={lavaRadius}
+            />
+
+            <Player
+              setStaminaPercent={setStaminaPercent}
+              selectedDinosaur={selectedDinosaur}
+              setPlayerPosition={setPlayerPosition}
+            />
+          </>
         )}
       </Canvas>
 
-      {!gameStarted && (
+      {gamePhase === "menu" && (
         <TitleScreen
-          onStart={() => setGameStarted(true)}
+          onStart={startRun}
           selectedDinosaur={selectedDinosaur}
           setSelectedDinosaur={setSelectedDinosaur}
         />
       )}
 
-      {gameStarted && (
+      {gamePhase === "countdown" && (
+        <div style={styles.centerMessage}>
+          ERUPTION IN
+          <br />
+          {countdown}
+        </div>
+      )}
+
+      {gamePhase === "gameover" && (
+        <div style={styles.centerMessage}>
+          GAME OVER
+          <button style={styles.restartButton} onClick={returnToMenu}>
+            RETURN TO MENU
+          </button>
+        </div>
+      )}
+
+      {gamePhase === "victory" && (
+        <div style={styles.centerMessage}>
+          YOU ESCAPED!
+          <div style={styles.timeText}>Time: {runTime.toFixed(1)}s</div>
+          <div style={styles.timeText}>
+            Best: {bestTime === null ? "--" : `${bestTime.toFixed(1)}s`}
+          </div>
+          <button style={styles.restartButton} onClick={returnToMenu}>
+            RETURN TO MENU
+          </button>
+        </div>
+      )}
+
+      {gameActive && (
         <>
           <Hud staminaPercent={staminaPercent} />
 
-          <button
-            style={{
-              position: "fixed",
-              top: "20px",
-              right: "20px",
-              zIndex: 50,
-              padding: "10px 16px",
-              borderRadius: "999px",
-              border: "none",
-              background: "rgba(0,0,0,0.55)",
-              color: "white",
-              fontWeight: "bold",
-              cursor: "pointer",
-            }}
-            onClick={() => setGameStarted(false)}
-          >
+          <div style={styles.timerText}>Time: {runTime.toFixed(1)}s</div>
+
+          <button style={styles.menuButton} onClick={returnToMenu}>
             MENU
           </button>
-<div
-  style={{
-    position: "fixed",
-    right: 0,
-    top: 0,
-    width: "50%",
-    height: "100%",
-    zIndex: 8,
-    touchAction: "none",
-  }}
-  onPointerDown={(e) => {
-    cameraControls.isDragging = true;
-    cameraControls.lastX = e.clientX;
-  }}
-  onPointerMove={(e) => {
-    if (!cameraControls.isDragging) return;
 
-    const deltaX = e.clientX - cameraControls.lastX;
-    cameraControls.lastX = e.clientX;
-
-    cameraControls.angle -= deltaX * 0.04;
-  }}
-  onPointerUp={() => {
-    cameraControls.isDragging = false;
-  }}
-  onPointerCancel={() => {
-    cameraControls.isDragging = false;
-  }}
-/>
           <MobileControls />
         </>
       )}
     </div>
   );
 }
+
+const styles = {
+  centerMessage: {
+    position: "fixed",
+    inset: 0,
+    zIndex: 80,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "white",
+    fontSize: "46px",
+    fontWeight: "bold",
+    textAlign: "center",
+    textShadow: "0 4px 18px rgba(0,0,0,0.8)",
+    pointerEvents: "none",
+  },
+
+  restartButton: {
+    marginTop: "24px",
+    padding: "14px 24px",
+    borderRadius: "999px",
+    border: "none",
+    background: "white",
+    color: "#af002d",
+    fontSize: "16px",
+    fontWeight: "bold",
+    pointerEvents: "auto",
+  },
+
+  menuButton: {
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    zIndex: 50,
+    padding: "10px 16px",
+    borderRadius: "999px",
+    border: "none",
+    background: "rgba(0,0,0,0.55)",
+    color: "white",
+    fontWeight: "bold",
+    cursor: "pointer",
+  },
+
+  timerText: {
+    position: "fixed",
+    top: "58px",
+    left: "20px",
+    zIndex: 50,
+    color: "white",
+    fontSize: "18px",
+    fontWeight: "bold",
+    textShadow: "0 3px 10px rgba(0,0,0,0.8)",
+  },
+
+  timeText: {
+    fontSize: "22px",
+    marginTop: "10px",
+  },
+};

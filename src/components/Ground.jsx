@@ -6,7 +6,7 @@ export default function Ground() {
       <Ocean />
 
       <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[50, 50]} />
+        <planeGeometry args={[100, 100]} />
         <meshStandardMaterial color="#d2b48c" />
       </mesh>
 

@@ -21,7 +21,11 @@ const cameraSettings = {
   apatosaurus: { height: 6, distance: 18 },
 };
 
-export default function Player({ setStaminaPercent, selectedDinosaur }) {
+export default function Player({
+  setStaminaPercent,
+  selectedDinosaur,
+  setPlayerPosition,
+}) {
   const player = useRef();
 
   const [animationState, setAnimationState] = useState("idle");
@@ -161,6 +165,11 @@ export default function Player({ setStaminaPercent, selectedDinosaur }) {
     } else {
       changeAnimation("idle");
     }
+    
+setPlayerPosition({
+  x: player.current.position.x,
+  z: player.current.position.z,
+});
 
     const cameraConfig =
     cameraSettings[selectedDinosaur] || cameraSettings.velociraptor;
