@@ -165,35 +165,34 @@ export default function Player({
     } else {
       changeAnimation("idle");
     }
-    
-setPlayerPosition({
-  x: player.current.position.x,
-  z: player.current.position.z,
-});
+
+    setPlayerPosition({
+      x: player.current.position.x,
+      z: player.current.position.z,
+    });
 
     const cameraConfig =
-    cameraSettings[selectedDinosaur] || cameraSettings.velociraptor;
-if (!cameraControls.isDragging) {
-  cameraControls.angle = THREE.MathUtils.lerp(
-    cameraControls.angle,
-    0,
-    0.08
-  );
-}
+      cameraSettings[selectedDinosaur] || cameraSettings.velociraptor;
 
-const cameraX =
-  player.current.position.x +
-  Math.sin(cameraControls.angle) * cameraConfig.distance;
+    if (!cameraControls.isDragging) {
+      cameraControls.angle = THREE.MathUtils.lerp(
+        cameraControls.angle,
+        0,
+        0.08
+      );
+    }
 
-const cameraZ =
-  player.current.position.z +
-  Math.cos(cameraControls.angle) * cameraConfig.distance;
+    const cameraX =
+      player.current.position.x +
+      Math.sin(cameraControls.angle) * cameraConfig.distance;
 
-const targetCameraPosition = new THREE.Vector3(
-  cameraX,
-  player.current.position.y + cameraConfig.height,
-  cameraZ
-);
+    const cameraZ = player.current.position.z + cameraConfig.distance;
+
+    const targetCameraPosition = new THREE.Vector3(
+      cameraX,
+      player.current.position.y + cameraConfig.height,
+      cameraZ
+    );
 
     camera.position.lerp(targetCameraPosition, 0.08);
     camera.lookAt(player.current.position);
@@ -202,9 +201,9 @@ const targetCameraPosition = new THREE.Vector3(
   return (
     <group ref={player} position={[0, 0.5, 0]}>
       <Raptor
-      animationState={animationState}
-      selectedDinosaur={selectedDinosaur}
-/>
+        animationState={animationState}
+        selectedDinosaur={selectedDinosaur}
+      />
     </group>
   );
 }

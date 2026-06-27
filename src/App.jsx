@@ -1,14 +1,14 @@
 import "./App.css";
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
-
+import VolcanoMarker, { volcanoPosition } from "./components/VolcanoMarker";
 import Ground from "./components/Ground";
 import Player from "./components/Player";
 import MobileControls from "./components/MobileControls";
 import Hud from "./components/Hud";
 import TitleScreen from "./components/TitleScreen";
 import LavaSpread from "./components/LavaSpread";
-import SafeZone, { safeZonePosition } from "./components/SafeZone";
+import SafeZone, { defaultSafeZonePosition } from "./components/SafeZone";
 import { keys, cameraControls } from "./components/gameState";
 
 window.addEventListener("keydown", (e) => {
@@ -59,6 +59,7 @@ export default function App() {
   const [staminaPercent, setStaminaPercent] = useState(100);
   const [selectedDinosaur, setSelectedDinosaur] = useState("velociraptor");
   const [playerPosition, setPlayerPosition] = useState({ x: 0, z: 0 });
+  const [safeZone, setSafeZone] = useState(defaultSafeZonePosition);
   const [runTime, setRunTime] = useState(0);
   const [bestTime, setBestTime] = useState(() => {
     const saved = localStorage.getItem("bestTime");
@@ -67,12 +68,21 @@ export default function App() {
 
   const lavaRadius = useRef(0);
 
-  const startRun = () => {
-    lavaRadius.current = 0;
-    setRunTime(0);
-    setCountdown(3);
-    setGamePhase("countdown");
+ const startRun = () => {
+  lavaRadius.current = 0;
+  setRunTime(0);
+
+  const randomSafeZone = {
+    x: Math.random() * 70 - 35,
+    z: Math.random() * 60 - 10,
+    radius: 5,
   };
+
+  setSafeZone(randomSafeZone);
+
+  setCountdown(3);
+  setGamePhase("countdown");
+};
 
   const returnToMenu = () => {
     lavaRadius.current = 0;
@@ -107,7 +117,7 @@ export default function App() {
   useEffect(() => {
     if (gamePhase !== "playing") return;
 
-    const lavaSource = { x: 0, z: -18 };
+    const lavaSource = volcanoPosition;
     const dx = playerPosition.x - lavaSource.x;
     const dz = playerPosition.z - lavaSource.z;
     const distanceToLavaSource = Math.sqrt(dx * dx + dz * dz);
@@ -120,11 +130,11 @@ export default function App() {
   useEffect(() => {
     if (gamePhase !== "playing") return;
 
-    const dx = playerPosition.x - safeZonePosition.x;
-    const dz = playerPosition.z - safeZonePosition.z;
-    const distanceToSafeZone = Math.sqrt(dx * dx + dz * dz);
+const dx = playerPosition.x - safeZone.x;
+const dz = playerPosition.z - safeZone.z;
+const distanceToSafeZone = Math.sqrt(dx * dx + dz * dz);
 
-    if (distanceToSafeZone < safeZonePosition.radius + 1) {
+if (distanceToSafeZone <= safeZone.radius + 1) {
       const finalTime = Number(runTime.toFixed(1));
 
       if (bestTime === null || finalTime < bestTime) {
@@ -134,7 +144,7 @@ export default function App() {
 
       setGamePhase("victory");
     }
-  }, [playerPosition, gamePhase, runTime, bestTime]);
+  }, [playerPosition, gamePhase, runTime, bestTime, safeZone]);
 
   const gameActive = gamePhase !== "menu";
 
@@ -142,15 +152,15 @@ export default function App() {
     <div className="game-frame">
       <Canvas camera={{ position: [0, 2.5, 5], fov: 55 }}>
         <color attach="background" args={["#87ceeb"]} />
-
+        <fog attach="fog" args={["#c98b5a", 18, 75]} />
         <ambientLight intensity={2} />
         <directionalLight position={[5, 10, 5]} intensity={3} />
-
+        {gameActive && <VolcanoMarker />}
         <Ground />
 
         {gameActive && (
           <>
-            <SafeZone />
+            <SafeZone safeZone={safeZone} />
             <LavaSpread
               active={gamePhase === "playing"}
               radiusRef={lavaRadius}
